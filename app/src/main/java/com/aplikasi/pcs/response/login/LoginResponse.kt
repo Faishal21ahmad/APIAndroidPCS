@@ -1,7 +1,7 @@
 package com.aplikasi.pcs.response.login
 
-data class LoginRespose(
+data class LoginResponse(
     val success:Boolean,
     val message:String,
-    val data:Data
+    val data: Data
 )

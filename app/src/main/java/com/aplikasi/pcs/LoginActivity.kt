@@ -3,17 +3,19 @@ package com.aplikasi.pcs
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
-import android.telecom.Call
+
 import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.aplikasi.pcs.api.BaseRetrofit
-import com.aplikasi.pcs.response.login.LoginRespose
+import com.aplikasi.pcs.response.login.LoginResponse
 import com.aplikasi.pcs.utils.SessionManager
 import com.google.android.material.textfield.TextInputEditText
+import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Response
-import javax.security.auth.callback.Callback
+
 
 class LoginActivity : AppCompatActivity() {
     companion object{
@@ -21,7 +23,7 @@ class LoginActivity : AppCompatActivity() {
         private  lateinit var  context: Context
     }
 
-    private  val api by lazy { BaseRetrofit().endpoint }
+    private val api by lazy { BaseRetrofit().endpoint }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,13 +43,33 @@ class LoginActivity : AppCompatActivity() {
         val txtPassword = findViewById(R.id.txtPassword) as TextInputEditText
 
         btnLogin.setOnClickListener {
-            api.login(txtEmail.text.toString(),txtPassword.text.toString()).enqueue(object : Callback<LoginRespose>{
+            api.login(txtEmail.text.toString(),txtPassword.text.toString()).enqueue(object :
+                Callback<LoginResponse> {
                 override fun onResponse(
-                    call: Call<LoginRespose>,
-                    respose: Response<LoginRespose>
-                ) {
-                    Log.e("Login")
+                    call: Call<LoginResponse>,
+                    response: Response<LoginResponse>
+                ){
+                    Log.e("LoginData",response.toString())
+                    val correct= response.body()!!.success
+                    if(correct){
+                        val token = response.body()!!.data.token
+
+                        sessionManager.saveString("TOKEN","Bearer " +token)
+                        sessionManager.saveBoolean("LOGIN_STATUS",true)
+                        sessionManager.saveString("ADMIN_ID",response.body()!!.data.admin.id.toString())
+
+                        val moveIntent = Intent(this@LoginActivity,MainActivity::class.java )
+                        startActivity(moveIntent)
+                        finish()
+                    }  else {
+                        Toast.makeText(applicationContext,"User dan password salah",Toast.LENGTH_LONG).show()
+                    }
                 }
+
+                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                    Log.e("LoginError",t.toString())
+                }
+
             })
         }
     }
